@@ -48,6 +48,8 @@ plugins {
 
 // Aggregates the published android-pdf-viewer module into a single Maven Central deployment.
 nmcpAggregation {
+    // The root project and :android-pdf-viewer share a name; this is intentional.
+    allowDuplicateProjectNames.set(true)
     centralPortal {
         username = providers.gradleProperty("ossrhUsername")
             .orElse(providers.environmentVariable("ossrhUsername"))
