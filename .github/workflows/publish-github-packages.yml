@@ -1,0 +1,55 @@
+name: Publish PDF Viewer to GitHub Packages
+
+on:
+  push:
+    tags:
+      - "pdfview-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Maven version to publish (for example 3.2.20-search.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-37"
+
+      - name: Determine Maven version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#pdfview-v}"
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build release library
+        run: ./gradlew :android-pdf-viewer:assembleRelease
+
+      - name: Publish fork artifact
+        run: ./gradlew :android-pdf-viewer:publishGithubPackagesPublicationToGitHubPackagesRepository -PgithubPackagesVersion="${{ steps.version.outputs.value }}"
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
