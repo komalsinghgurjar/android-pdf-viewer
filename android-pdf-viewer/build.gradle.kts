@@ -58,6 +58,33 @@ fun getPropertyValue(propertyName: String): String? {
 afterEvaluate {
     publishing {
         publications {
+            // Separate publication for this fork. The original release publication and
+            // Infomaniak's Maven Central publishing coordinates remain unchanged.
+            create<MavenPublication>("githubPackages") {
+                from(components.findByName("release")!!)
+                groupId = libGroupId
+                artifactId = libArtifactId
+                version = providers.gradleProperty("githubPackagesVersion")
+                    .orElse("3.2.20-search.1")
+                    .get()
+                pom {
+                    name.set("android-pdfview")
+                    description.set("Android PDF viewer with native PDF text search and highlighting")
+                    url.set("https://github.com/komalsinghgurjar/android-pdf-viewer")
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git://github.com/komalsinghgurjar/android-pdf-viewer.git")
+                        developerConnection.set("scm:git:ssh://github.com/komalsinghgurjar/android-pdf-viewer.git")
+                        url.set("https://github.com/komalsinghgurjar/android-pdf-viewer")
+                    }
+                }
+            }
+
             create<MavenPublication>("release") {
                 from(components.findByName("release")!!)
                 groupId = libGroupId
@@ -91,6 +118,15 @@ afterEvaluate {
         }
 
         repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/komalsinghgurjar/android-pdf-viewer")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+
             maven {
                 name = "reposilite"
                 url = uri(
